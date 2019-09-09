@@ -2,6 +2,7 @@ import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.LinkedList;
 import java.util.BitSet;
+//import java.util.concurrent.LinkedBlockingDeque;
 
 class Random {
 	int	w;
@@ -25,8 +26,8 @@ class Random {
 class Vertex {
 	int			index;
 	boolean			listed;
-	LinkedList<Vertex>	pred;
-	LinkedList<Vertex>	succ;
+	MonitorLinkedList<Vertex>	pred;
+	MonitorLinkedList<Vertex>	succ;
 	BitSet			in;
 	BitSet			out;
 	BitSet			use;
@@ -35,15 +36,15 @@ class Vertex {
 	Vertex(int i)
 	{
 		index	= i;
-		pred	= new LinkedList<Vertex>();
-		succ	= new LinkedList<Vertex>();
+		pred	= new MonitorLinkedList<Vertex>();
+		succ	= new MonitorLinkedList<Vertex>();
 		in	= new BitSet();
 		out	= new BitSet();
 		use	= new BitSet();
 		def	= new BitSet();
 	}
 
-	void computeIn(LinkedList<Vertex> worklist)
+	void computeIn(MonitorLinkedList<Vertex> worklist)
 	{
 		int			i;
 		BitSet			old;
@@ -170,14 +171,14 @@ class Dataflow {
 		Vertex			u;
 		Vertex			v;
 		int			i;
-		LinkedList<Vertex>	worklist;
+		MonitorLinkedList<Vertex>	worklist;
 		long			begin;
 		long			end;
 
 		System.out.println("computing liveness...");
 
 		begin = System.nanoTime();
-		worklist = new LinkedList<Vertex>();
+		worklist = new MonitorLinkedList<Vertex>();
 
 		for (i = 0; i < vertex.length; ++i) {
 			worklist.addLast(vertex[i]);
@@ -234,3 +235,21 @@ class Dataflow {
 				vertex[i].print();
 	}
 }
+
+class MonitorLinkedList<E> extends LinkedList<E> {
+	@Override
+	public synchronized void addLast(E e) {
+		super.addLast(e);
+	}
+
+	@Override
+	public synchronized E remove() {
+		return super.remove();
+	}
+	
+	@Override
+	public synchronized ListIterator<E> listIterator() {
+		return super.listIterator();
+	}
+}
+
