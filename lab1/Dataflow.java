@@ -2,7 +2,8 @@ import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.LinkedList;
 import java.util.BitSet;
-//import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 class Random {
 	int	w;
@@ -25,11 +26,11 @@ class Random {
 
 class Vertex {
 	int			index;
-	boolean			listed;
+	volatile boolean	listed;
 	MonitorLinkedList<Vertex>	pred;
 	MonitorLinkedList<Vertex>	succ;
-	BitSet			in;
-	BitSet			out;
+	volatile BitSet		in;
+	volatile BitSet		out;
 	BitSet			use;
 	BitSet			def;
 
@@ -44,7 +45,7 @@ class Vertex {
 		def	= new BitSet();
 	}
 
-	void computeIn(MonitorLinkedList<Vertex> worklist)
+	synchronized void computeIn(MonitorLinkedList<Vertex> worklist)
 	{
 		int			i;
 		BitSet			old;
@@ -166,7 +167,7 @@ class Dataflow {
 		}
 	}
 
-	public static void liveness(Vertex vertex[])
+	public static void liveness(Vertex vertex[], int nthread)
 	{
 		Vertex			u;
 		Vertex			v;
@@ -185,11 +186,15 @@ class Dataflow {
 			vertex[i].listed = true;
 		}
 
+		ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(nthread);
+		Worker w;
 		while (!worklist.isEmpty()) {
 			u = worklist.remove();
 			u.listed = false;
-			u.computeIn(worklist);
-		}
+			w = new Worker(u, worklist);
+			executor.execute(w);
+		}	
+			
 		end = System.nanoTime();
 
 		System.out.println("T = " + (end-begin)/1e9 + " s");
@@ -228,13 +233,29 @@ class Dataflow {
 
 		generateCFG(vertex, maxsucc, r);
 		generateUseDef(vertex, nsym, nactive, r);
-		liveness(vertex);
+		liveness(vertex, nthread);
 
 		if (print)
 			for (i = 0; i < vertex.length; ++i)
 				vertex[i].print();
 	}
 }
+
+class Worker implements Runnable {
+	private Vertex v;
+	private MonitorLinkedList<Vertex> worklist;
+
+	public Worker(Vertex v, MonitorLinkedList<Vertex> worklist) {
+		super();
+		this.v = v;
+		this.worklist = worklist;
+	}
+	
+	@Override
+	public void run() {
+		v.computeIn(worklist);
+	}
+}		
 
 class MonitorLinkedList<E> extends LinkedList<E> {
 	@Override
@@ -250,6 +271,11 @@ class MonitorLinkedList<E> extends LinkedList<E> {
 	@Override
 	public synchronized ListIterator<E> listIterator() {
 		return super.listIterator();
+	}
+
+	@Override
+	public synchronized boolean isEmpty() {
+		return super.isEmpty();
 	}
 }
 
