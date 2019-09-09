@@ -4,6 +4,7 @@ import java.util.LinkedList;
 import java.util.BitSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.RejectedExecutionException; 
 
 class Random {
 	int	w;
@@ -192,9 +193,15 @@ class Dataflow {
 			u = worklist.remove();
 			u.listed = false;
 			w = new Worker(u, worklist);
-			executor.execute(w);
-		}	
-			
+			try {
+				executor.execute(w);
+			} catch (RejectedExecutionException e) {
+				// TODO fix
+				System.out.println("Rejected Execution");
+			}
+		}
+		executor.shutdown();
+
 		end = System.nanoTime();
 
 		System.out.println("T = " + (end-begin)/1e9 + " s");
