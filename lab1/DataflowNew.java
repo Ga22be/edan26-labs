@@ -192,7 +192,7 @@ class DataflowNew {
 	{
 		Vertex			v;
 		int			i;
-		List<Vertex>	worklist;
+		List<Vertex>		worklist;
 		long			begin;
 		long			end;
 
