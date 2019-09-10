@@ -12,4 +12,6 @@ P=1
 #T=4
 #P=1
 
-javac Dataflow.java && java -Xmx2048M Dataflow $S $V $U $A $T $P
+javac DataflowNew.java && java -Xmx2048M Dataflow $S $V $U $A $T $P > tempNew
+javac Dataflow.java && java -Xmx2048M Dataflow $S $V $T $A $T $P > tempOld
+diff tempNew tempOld
