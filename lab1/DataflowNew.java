@@ -1,7 +1,10 @@
-import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.LinkedList;
 import java.util.BitSet;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.Executors;
 
 class Random {
 	int	w;
@@ -23,10 +26,10 @@ class Random {
 }
 
 class Vertex {
-	int			index;
-	boolean			listed;
-	LinkedList<Vertex>	pred;
-	LinkedList<Vertex>	succ;
+	private int		index;
+	private boolean		listed;
+	List<Vertex>		pred;
+	List<Vertex>		succ;
 	BitSet			in;
 	BitSet			out;
 	BitSet			use;
@@ -43,38 +46,42 @@ class Vertex {
 		def	= new BitSet();
 	}
 
-	void computeIn(LinkedList<Vertex> worklist)
+	public synchronized void setListed(boolean listed) {
+		this.listed = listed;
+	}
+
+	private synchronized boolean listIfNotListed(List<Vertex> worklist) {
+		if (!listed) {
+			listed = true;
+			worklist.add(this);
+			return true;
+		}
+		return false;
+	}
+
+	void computeIn(List<Vertex> worklist)
 	{
-		int			i;
-		BitSet			old;
-		Vertex			v;
-		ListIterator<Vertex>	iter;
-
-		iter = succ.listIterator();
-
-		while (iter.hasNext()) {
-			v = iter.next();
-			out.or(v.in);
+		for (Vertex v : succ) {
+			synchronized(v) {
+				out.or(v.in);
+			}
 		}
 
-		old = in;
+		BitSet old = in;
 
 		// in = use U (out - def)
+		synchronized(this) {
+			in = new BitSet();
+			in.or(out);	
+			in.andNot(def);	
+			in.or(use);
+		}
 
-		in = new BitSet();
-		in.or(out);	
-		in.andNot(def);	
-		in.or(use);
 
 		if (!in.equals(old)) {
-			iter = pred.listIterator();
 
-			while (iter.hasNext()) {
-				v = iter.next();
-				if (!v.listed) {
-					worklist.addLast(v);
-					v.listed = true;
-				}
+			for (Vertex v : pred) {
+				v.listIfNotListed(worklist);
 			}
 		}
 	}
@@ -109,12 +116,28 @@ class Vertex {
 
 }
 
-class Dataflow {
+class Task implements Runnable {
+	private Vertex v;
+	private List<Vertex> worklist;
+
+	public Task(List<Vertex> worklist, Vertex v) {
+		this.worklist = worklist;
+		this.v = v;
+	}
+	
+	@Override
+	public void run() {
+		v.computeIn(worklist);
+	}
+
+}
+
+class DataflowNew {
 
 	public static void connect(Vertex pred, Vertex succ)
 	{
-		pred.succ.addLast(succ);
-		succ.pred.addLast(pred);
+		pred.succ.add(succ);
+		succ.pred.add(pred);
 	}
 
 	public static void generateCFG(Vertex vertex[], int maxsucc, Random r)
@@ -165,31 +188,47 @@ class Dataflow {
 		}
 	}
 
-	public static void liveness(Vertex vertex[])
+	public static void liveness(Vertex vertex[], int nthread)
 	{
-		Vertex			u;
 		Vertex			v;
 		int			i;
-		LinkedList<Vertex>	worklist;
+		List<Vertex>	worklist;
 		long			begin;
 		long			end;
 
 		System.out.println("computing liveness...");
 
 		begin = System.nanoTime();
-		worklist = new LinkedList<Vertex>();
+		// Makes a thread-safe list
+		worklist = Collections.synchronizedList(new LinkedList<Vertex>());
 
 		for (i = 0; i < vertex.length; ++i) {
-			worklist.addLast(vertex[i]);
-			vertex[i].listed = true;
+			worklist.add(vertex[i]);
+			vertex[i].setListed(true);
 		}
+		
+		ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(nthread);
+		while (executor.getActiveCount() > 0 || !worklist.isEmpty()) {
+			try {
+				v = worklist.remove(0);
+				v.setListed(false);
+				Runnable task = new Task(worklist, v);
+				executor.submit(task);	
+			} catch (IndexOutOfBoundsException e) {
+				// somebody else got the last one	
+			}
+		}
+		
+		executor.shutdown();
 
-		while (!worklist.isEmpty()) {
-			u = worklist.remove();
-			u.listed = false;
-			u.computeIn(worklist);
-		}
+//		while (!worklist.isEmpty()) {
+//			v = worklist.remove(0);
+//			v.setListed(false);
+//			v.computeIn(worklist);
+//		}
 		end = System.nanoTime();
+
+//		System.out.println("List size" + worklist.size());
 
 		System.out.println("T = " + (end-begin)/1e9 + " s");
 	}
@@ -227,10 +266,10 @@ class Dataflow {
 
 		generateCFG(vertex, maxsucc, r);
 		generateUseDef(vertex, nsym, nactive, r);
-		liveness(vertex);
+		liveness(vertex, nthread);
 
 		if (print)
 			for (i = 0; i < vertex.length; ++i)
 				vertex[i].print();
-	}
+	}	
 }
