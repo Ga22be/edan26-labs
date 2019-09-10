@@ -3,3 +3,4 @@ all:
 
 clean:
 	rm -f *.class
+	rm tempNew tempOld
