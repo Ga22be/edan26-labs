@@ -117,17 +117,25 @@ class Vertex {
 }
 
 class Task implements Runnable {
-	private Vertex v;
 	private List<Vertex> worklist;
 
-	public Task(List<Vertex> worklist, Vertex v) {
+	public Task(List<Vertex> worklist) {
 		this.worklist = worklist;
-		this.v = v;
 	}
 	
 	@Override
 	public void run() {
-		v.computeIn(worklist);
+		Vertex v;
+		while (!worklist.isEmpty()) {
+			try {
+				v = worklist.remove(0);
+				v.setListed(false);
+				v.computeIn(worklist);
+			}
+			catch (IndexOutOfBoundsException e) {
+				// Somebody else was faster
+			}
+		}
 	}
 
 }
@@ -208,16 +216,12 @@ class DataflowNew {
 		}
 		
 		ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(nthread);
-		while (executor.getActiveCount() > 0 || !worklist.isEmpty()) {
-			try {
-				v = worklist.remove(0);
-				v.setListed(false);
-				Runnable task = new Task(worklist, v);
-				executor.submit(task);	
-			} catch (IndexOutOfBoundsException e) {
-				// somebody else got the last one	
-			}
+	
+		for (int t = 0; t < nthread; t++) {
+			executor.submit(new Task(worklist));
 		}
+		
+		while (executor.getActiveCount() > 0) {} 
 		
 		executor.shutdown();
 
