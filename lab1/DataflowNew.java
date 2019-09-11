@@ -118,6 +118,7 @@ class Vertex {
 
 class Task implements Runnable {
 	private List<Vertex> worklist;
+	public int taskCount;
 
 	public Task(List<Vertex> worklist) {
 		this.worklist = worklist;
@@ -131,10 +132,12 @@ class Task implements Runnable {
 				v = worklist.remove(0);
 				v.setListed(false);
 				v.computeIn(worklist);
+				taskCount++;
 			} catch (IndexOutOfBoundsException e) {
 				// Somebody else got it
 			}
 		}
+		System.out.println("Task handled " + taskCount + " vertices.");
 	}
 
 }
