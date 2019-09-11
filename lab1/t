@@ -5,16 +5,27 @@
 #T=4
 #P=1
 
-S=10000
-V=1000
+SS="1000 10000 20000"
+TS="1 8 16 32"
+
+#S=10000
+V=100000
 U=4
 A=100
-T=4
+#T=70
 P=0
+javac DataflowNew.java 
+#rm -f tempNew tempOld
+for S in $SS
+do
+	for X in $TS
+	do
+		echo $S $X
+		java -Xmx8192M DataflowNew $S $V $U $A $X $P > temp.$S.$X
+		cat temp.$S.$X
+#		javac Dataflow.java && java -Xmx8192M Dataflow $S $V $U $A $X $P > tempOld.$S.$X
+	
+#		diff tempNew.$S.$X tempOld.$S.$X
+	done
+done
 
-rm -f tempNew tempOld
-
-javac DataflowNew.java && java -Xmx2048M DataflowNew $S $V $U $A $T $P > tempNew
-javac Dataflow.java && java -Xmx2048M Dataflow $S $V $U $A $T $P > tempOld
-
-diff tempNew tempOld
