@@ -80,8 +80,9 @@ void* work(void* p)
 	int		j;
 	int		k;
 	int		a;
+	int nThreads = *((int*)p);
 
-	for (i = 0; i < TRANSACTIONS / THREADS; i += 1) {
+	for (i = 0; i < TRANSACTIONS / nThreads; i += 1) {
 
 		j = rand() % ACCOUNTS;
 		a = rand() % MAX_AMOUNT;
@@ -98,17 +99,21 @@ void* work(void* p)
 
 int main(int argc, char** argv)
 {
+	int nThreads = 1;
+	if (argc > 1)
+		nThreads = atoi(argv[1]);
+
 	int		i;
 	int		result;
 	uint64_t	total;
-	pthread_t	thread[THREADS];
+	pthread_t	thread[nThreads];
 	double		begin;
 	double		end;
 
 	printf("swish lab computing transactions per second\n\n");
 	printf("%-*s %d\n", WIDTH, "accounts", ACCOUNTS);
 	printf("%-*s %d\n", WIDTH, "transactions", TRANSACTIONS);
-	printf("%-*s %d\n", WIDTH, "threads", THREADS);
+	printf("%-*s %d\n", WIDTH, "threads", nThreads);
 	printf("%-*s %d\n", WIDTH, "processing", PROCESSING);
 	printf("\n");
 
@@ -119,15 +124,13 @@ int main(int argc, char** argv)
 	for (i = 0; i < ACCOUNTS; i += 1) {
 		account[i].balance = START_BALANCE;
 		pthread_mutex_init(&account[i].mutex, NULL);
-//		account[i].mutex = PTHREAD_MUTEX_INITIALIZER;
 	}	
 
-	pthread_t threads[THREADS];
-	for (i = 0; i < THREADS; i += 1)
-		pthread_create( &threads[i], NULL, work, NULL);
+	for (i = 0; i < nThreads; i += 1)
+		pthread_create( &thread[i], NULL, work, (void*)&nThreads);
 
-	for (i = 0; i < THREADS; i += 1)
-		pthread_join( threads[i], NULL);
+	for (i = 0; i < nThreads; i += 1)
+		pthread_join( thread[i], NULL);
 
 	total = 0;
 
