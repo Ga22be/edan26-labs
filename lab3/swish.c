@@ -17,11 +17,11 @@
 
 typedef struct {
 	int		balance;
+	pthread_mutex_t mutex; 
 } account_t;
 
 account_t		account[ACCOUNTS];
 char*			progname;
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 double sec(void)
 {
@@ -57,15 +57,21 @@ void extra_processing()
 
 void swish(account_t* from, account_t* to, int amount)
 {
-	pthread_mutex_lock(&mutex);
+	pthread_mutex_lock(&from->mutex);
 	if (from->balance - amount >= 0) {
 
 		extra_processing();
 
 		from->balance -= amount;
+
+		pthread_mutex_unlock(&from->mutex);
+		pthread_mutex_lock(&to->mutex);
 		to->balance += amount;
+		pthread_mutex_unlock(&to->mutex);
 	}
-	pthread_mutex_unlock(&mutex);
+	else {
+		pthread_mutex_unlock(&from->mutex);
+	}
 }
 
 void* work(void* p)
@@ -110,8 +116,11 @@ int main(int argc, char** argv)
 
 	progname = argv[0];
 
-	for (i = 0; i < ACCOUNTS; i += 1)
+	for (i = 0; i < ACCOUNTS; i += 1) {
 		account[i].balance = START_BALANCE;
+		pthread_mutex_init(&account[i].mutex, NULL);
+//		account[i].mutex = PTHREAD_MUTEX_INITIALIZER;
+	}	
 
 	pthread_t threads[THREADS];
 	for (i = 0; i < THREADS; i += 1)
