@@ -1,5 +1,7 @@
 .PHONY: all clean
 
+CFLAGS += -pthread
+
 TARGETS = swish
 
 all: $(TARGETS)
