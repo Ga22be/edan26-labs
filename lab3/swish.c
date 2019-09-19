@@ -111,7 +111,12 @@ int main(int argc, char** argv)
 	for (i = 0; i < ACCOUNTS; i += 1)
 		account[i].balance = START_BALANCE;
 
-	work(NULL);
+	pthread_t threads[THREADS];
+	for (i = 0; i < THREADS; i += 1)
+		pthread_create( &threads[i], NULL, work, NULL);
+
+	for (i = 0; i < THREADS; i += 1)
+		pthread_join( threads[i], NULL);
 
 	total = 0;
 
