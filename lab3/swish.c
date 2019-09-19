@@ -11,7 +11,7 @@
 #define	START_BALANCE		(1000)		/* initial amount in each account. */
 #define	ACCOUNTS		(1000)		/* number of accounts. */
 #define	TRANSACTIONS		(100000)	/* number of swish transaction to do. */
-#define	THREADS			(1)		/* number of threads. */
+#define	THREADS			(10)		/* number of threads. */
 #define	PROCESSING		(10000)		/* amount of work per transaction. */
 #define	MAX_AMOUNT		(100)		/* swish limit in one transaction. */
 
@@ -21,6 +21,7 @@ typedef struct {
 
 account_t		account[ACCOUNTS];
 char*			progname;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 double sec(void)
 {
@@ -56,7 +57,7 @@ void extra_processing()
 
 void swish(account_t* from, account_t* to, int amount)
 {
-
+	pthread_mutex_lock(&mutex);
 	if (from->balance - amount >= 0) {
 
 		extra_processing();
@@ -64,6 +65,7 @@ void swish(account_t* from, account_t* to, int amount)
 		from->balance -= amount;
 		to->balance += amount;
 	}
+	pthread_mutex_unlock(&mutex);
 }
 
 void* work(void* p)
