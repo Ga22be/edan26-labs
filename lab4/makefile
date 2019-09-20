@@ -15,8 +15,14 @@ A=1000
 T=4
 P=0
 
-all: $(OBJS)	
+.PHONY: all run clean
+
+all: $(OUT) run
+
+$(OUT): $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $(OUT)
+
+run: $(OUT)
 	#valgrind --tool=helgrind ./$(OUT) $(S) $(V) $(U) $(A) $(T) $(P)
 	./$(OUT) $(S) $(V) $(U) $(A) $(T) $(P)
 
