@@ -1,1 +1,4 @@
 live.zip
+*.o
+cfg.dot
+live
