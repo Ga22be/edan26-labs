@@ -87,9 +87,9 @@ void* work(void* p)
 		j = rand() % ACCOUNTS;
 		a = rand() % MAX_AMOUNT;
 
-		do
+//		do
 			k = rand() % ACCOUNTS;
-		while (k == j);
+//		while (k == j);
 
 		swish(&account[j], &account[k], a);
 	}
