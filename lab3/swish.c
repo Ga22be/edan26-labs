@@ -121,9 +121,14 @@ int main(int argc, char** argv)
 
 	progname = argv[0];
 
+	// Initialize mutexattr
+	pthread_mutexattr_t mutexattr;
+	pthread_mutexattr_init(&mutexattr);
+	pthread_mutexattr_settype(&mutexattr, PTHREAD_MUTEX_RECURSIVE);
+
 	for (i = 0; i < ACCOUNTS; i += 1) {
 		account[i].balance = START_BALANCE;
-		pthread_mutex_init(&account[i].mutex, NULL);
+		pthread_mutex_init(&account[i].mutex, &mutexattr);
 	}	
 
 	for (i = 0; i < nThreads; i += 1)
