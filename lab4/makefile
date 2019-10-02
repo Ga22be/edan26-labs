@@ -15,13 +15,11 @@ A=1000
 T=4
 P=0
 
-.PHONY: all run clean debug
+.PHONY: all run clean
 
-all: debug run
+all: $(OUT) run
 
-debug: CFLAGS += -O3
-debug: $(OUT)
-
+#$(OUT): CFLAGS += -O3
 $(OUT): $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $(OUT)
 
