@@ -183,13 +183,14 @@ void liveness(cfg_t* cfg)
 	}
 
 	size_t		nThreads = 1;
+	printf("nthreads  = %zu\n", nThreads);
 	pthread_t	thread[nThreads];
 
 	int create_err = 0;
 	for (size_t index = 0; index < nThreads; index++) {
 		create_err = pthread_create(&thread[index], NULL, work, (void*)worklist);
 		if (create_err != 0) {
-			fprintf(stderr, "Failed to create thread[%lu]: %i\n", index, create_err);
+			fprintf(stderr, "Failed to create thread[%zu]: %i\n", index, create_err);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -198,7 +199,7 @@ void liveness(cfg_t* cfg)
 	for (size_t index = 0; index < nThreads; index++) {
 		join_err = pthread_join(thread[index], NULL);
 		if (join_err != 0) {
-			fprintf(stderr, "Failed to join thread[%lu]: %i\n", index, join_err);
+			fprintf(stderr, "Failed to join thread[%zu]: %i\n", index, join_err);
 			exit(EXIT_FAILURE);
 		}
 	}
