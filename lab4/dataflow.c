@@ -116,13 +116,13 @@ void setbit(cfg_t* cfg, size_t v, set_type_t type, size_t index)
 
 void* work(void* arg)
 {
-	vertex_t*	u;
-	vertex_t*	v;
-	set_t*		prev;
-	size_t		j;
+	vertex_t*	u; // "ref" for vertex from worklist
+	vertex_t*	v; // "ref" for predecessors of u
+	set_t*		prev; // switch variable for u->prev
+	size_t		j; // index variable: 0 to u->nsucc
 	list_t*		worklist;
-	list_t*		p;
-	list_t*		h;
+	list_t*		p; // iterator for u->pred
+	list_t*		h; // end condition for p
 
 	worklist = (list_t*)arg;
 
@@ -168,8 +168,8 @@ void* work(void* arg)
 
 void liveness(cfg_t* cfg)
 {
-	vertex_t*	u;
-	size_t		i;
+	vertex_t*	u; // "ref" for vertex from worklist
+	size_t		i; // index variable: 0 to cfg->nvertex
 	list_t*		worklist;
 
 	worklist = NULL;
