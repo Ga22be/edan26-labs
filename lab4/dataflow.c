@@ -114,26 +114,17 @@ void setbit(cfg_t* cfg, size_t v, set_type_t type, size_t index)
 	set(cfg->vertex[v].set[type], index);
 }
 
-void liveness(cfg_t* cfg)
+void* work(void* arg)
 {
 	vertex_t*	u;
 	vertex_t*	v;
 	set_t*		prev;
-	size_t		i;
 	size_t		j;
 	list_t*		worklist;
 	list_t*		p;
 	list_t*		h;
 
-	worklist = NULL;
-
-	// put each vertex in cfg into worklist
-	for (i = 0; i < cfg->nvertex; ++i) {
-		u = &cfg->vertex[i];
-
-		insert_last(&worklist, u);
-		u->listed = true;
-	}
+	worklist = (list_t*)arg;
 
 	// while worklist not empty
 	// idea: wrap in function ("pop"?)
@@ -169,6 +160,46 @@ void liveness(cfg_t* cfg)
 				p = p->succ;
 
 			} while (p != h);
+		}
+	}
+
+	return NULL;
+}
+
+void liveness(cfg_t* cfg)
+{
+	vertex_t*	u;
+	size_t		i;
+	list_t*		worklist;
+
+	worklist = NULL;
+
+	// put each vertex in cfg into worklist
+	for (i = 0; i < cfg->nvertex; ++i) {
+		u = &cfg->vertex[i];
+
+		insert_last(&worklist, u);
+		u->listed = true;
+	}
+
+	size_t		nThreads = 1;
+	pthread_t	thread[nThreads];
+
+	int create_err = 0;
+	for (size_t index = 0; index < nThreads; index++) {
+		create_err = pthread_create(&thread[index], NULL, work, (void*)worklist);
+		if (create_err != 0) {
+			fprintf(stderr, "Failed to create thread[%lu]: %i\n", index, create_err);
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	int join_err = 0;
+	for (size_t index = 0; index < nThreads; index++) {
+		join_err = pthread_join(thread[index], NULL);
+		if (join_err != 0) {
+			fprintf(stderr, "Failed to join thread[%lu]: %i\n", index, join_err);
+			exit(EXIT_FAILURE);
 		}
 	}
 }
