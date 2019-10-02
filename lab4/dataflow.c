@@ -127,6 +127,7 @@ void liveness(cfg_t* cfg)
 
 	worklist = NULL;
 
+	// put each vertex in cfg into worklist
 	for (i = 0; i < cfg->nvertex; ++i) {
 		u = &cfg->vertex[i];
 
@@ -134,11 +135,15 @@ void liveness(cfg_t* cfg)
 		u->listed = true;
 	}
 
+	// while worklist not empty
+	// idea: wrap in function ("pop"?)
 	while ((u = remove_first(&worklist)) != NULL) {
 		u->listed = false;
 
 		reset(u->set[OUT]);
 
+		// for each successor j
+		// 	u.out |= j.in
 		for (j = 0; j < u->nsucc; ++j)
 			or(u->set[OUT], u->set[OUT], u->succ[j]->set[IN]);
 
@@ -147,8 +152,11 @@ void liveness(cfg_t* cfg)
 		u->set[IN] = prev;
 
 		/* in our case liveness information... */
+		// in = use U (out - def)
 		propagate(u->set[IN], u->set[OUT], u->set[DEF], u->set[USE]);
 
+		// if change
+		// 	add all predecessors to worklist if they aren't
 		if (u->pred != NULL && !equal(u->prev, u->set[IN])) {
 			p = h = u->pred;
 			do {
