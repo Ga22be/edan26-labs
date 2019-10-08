@@ -14,7 +14,7 @@ V=10
 U=4
 A=1000
 T=4
-P=0
+P=1
 
 .PHONY: all run clean
 
