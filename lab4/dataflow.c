@@ -60,7 +60,6 @@ cfg_t* new_cfg(size_t nvertex, size_t nsymbol, size_t max_succ)
 
 static void clean_vertex(vertex_t* v)
 {
-	printf("Cleaning vertex %zu\n", v->index);
 //	pthread_mutex_lock(&v->mutex); // TODO check for error
 	int		i;
 
@@ -75,7 +74,6 @@ static void clean_vertex(vertex_t* v)
 
 static void init_vertex(vertex_t* v, size_t index, size_t nsymbol, size_t max_succ)
 {
-	printf("Initializing vertex %zu\n", index);
 //	pthread_mutexattr_t mutexattr;
 //	pthread_mutexattr_init(&mutexattr);
 //	pthread_mutexattr_settype(&mutexattr, PTHREAD_MUTEX_RECURSIVE);
@@ -140,13 +138,9 @@ vertex_t* pop_worklist(list_t** worklist)
 	pthread_mutex_lock(&worklistMutex); // TODO check for error
 	u = (vertex_t*)remove_first(worklist);
 	if (u != NULL) {
-		printf("pop_worklist: %zu\n", u->index);
 //		pthread_mutex_lock(&u->mutex); // TODO check for error
 //		u->listed = false;
 //		pthread_mutex_unlock(&u->mutex); // TODO check for error
-	}
-	else {
-		printf("pop_worklist\n");
 	}
 	pthread_mutex_unlock(&worklistMutex); // TODO check for error
 	return u;
@@ -154,7 +148,6 @@ vertex_t* pop_worklist(list_t** worklist)
 
 void put_in_worklist(list_t** worklist, vertex_t* u)
 {
-	printf("put_in_worklist: %zu\n", u->index);
 	pthread_mutex_lock(&worklistMutex); // TODO check for error
 //	pthread_mutex_lock(&u->mutex); // TODO check for error
 //	u->listed = true;
@@ -165,7 +158,6 @@ void put_in_worklist(list_t** worklist, vertex_t* u)
 
 void* work(void* arg)
 {
-	printf("Thread starting work\n");
 	vertex_t*	u; // "ref" for vertex from worklist
 	vertex_t*	v; // "ref" for predecessors of u
 	set_t*		prev; // switch variable for u->prev
@@ -179,12 +171,8 @@ void* work(void* arg)
 		exit(EXIT_FAILURE);
 	}
 
-//	worklist = (list_t**)arg;
-
-	printf("Worklist casted\n");
 	// while worklist not empty
 	while ((u = pop_worklist(worklist)) != NULL) {
-//		printf("Thread popped vertex from worklist.\n");
 		pthread_mutex_lock(&u->mutex); // TODO check for error
 		
 		u->listed = false;
@@ -192,7 +180,6 @@ void* work(void* arg)
 
 		pthread_mutex_unlock(&u->mutex);
 
-//		printf("Debug 10\n");
 		// for each successor j
 		// 	u.out |= j.in
 
@@ -204,7 +191,6 @@ void* work(void* arg)
 			pthread_mutex_unlock(&u->succ[j]->mutex);	
 		}
 
-//		printf("Debug 20\n");
 
 		pthread_mutex_lock(&u->mutex);	
 
@@ -212,20 +198,15 @@ void* work(void* arg)
 		u->prev = u->set[IN];
 		u->set[IN] = prev;
 
-//		printf("Debug 30\n");
 		/* in our case liveness information... */
 		// in = use U (out - def)
 		propagate(u->set[IN], u->set[OUT], u->set[DEF], u->set[USE]);
 
-//		printf("Debug 40\n");
-//		bool change = !equal(u->prev, u->set[IN]);
 		pthread_mutex_unlock(&u->mutex); // TODO check for error
 
-//		printf("Debug 50\n");
 		// if change
 		// 	add all predecessors to worklist if they aren't
 		if (u->pred != NULL && !equal(u->prev, u->set[IN])) {
-			printf("Putting predecessors in worklist.\n");
 			p = h = u->pred;
 			do {
 				v = p->data;
@@ -240,7 +221,6 @@ void* work(void* arg)
 			} while (p != h);
 		}
 	}
-	printf("Thread leaving work\n");
 
 	return NULL;
 }
