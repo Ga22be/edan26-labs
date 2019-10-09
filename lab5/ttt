@@ -1,0 +1,4 @@
+for x in $*
+do
+	./tt $x
+done
