@@ -74,15 +74,15 @@ static void clean_vertex(vertex_t* v)
 
 static void init_vertex(vertex_t* v, size_t index, size_t nsymbol, size_t max_succ)
 {
-//	pthread_mutexattr_t mutexattr;
-//	pthread_mutexattr_init(&mutexattr);
+	pthread_mutexattr_t mutexattr;
+	pthread_mutexattr_init(&mutexattr);
 //	pthread_mutexattr_settype(&mutexattr, PTHREAD_MUTEX_RECURSIVE);
 
-//	int ret = pthread_mutex_init(&v->mutex, &mutexattr);
-//	if (ret != 0) {
-//		fprintf(stderr, "Failed to init mutex of vertex %zu: %i\n", index, ret);
-//		exit(EXIT_FAILURE);
-//	}
+	int ret = pthread_mutex_init(&v->mutex, &mutexattr);
+	if (ret != 0) {
+		fprintf(stderr, "Failed to init mutex of vertex %zu: %i\n", index, ret);
+		exit(EXIT_FAILURE);
+	}
 
 //	pthread_mutex_lock(&v->mutex); // TODO check for error
 	int		i;
