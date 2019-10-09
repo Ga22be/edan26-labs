@@ -1,6 +1,6 @@
 CC		= gcc
 
-CFLAGS		= -g -Wall -pedantic -std=c99 -pthread
+CFLAGS		= -g -Wall -pedantic -std=c99
 
 OBJS		= main.o list.o error.o random.o set.o dataflow.o
 
@@ -9,8 +9,7 @@ OUT		= live
 LDFLAGS		= -lpthread
 
 S=100000
-#V=100000
-V=10
+V=100000
 U=4
 A=1000
 T=4
