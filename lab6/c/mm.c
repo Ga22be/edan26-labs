@@ -12,6 +12,8 @@ void matmul()
 {
 	int	i, j, k;
 
+	#pragma omp parallel private(i,j,k)
+	#pragma omp for schedule(static, N/omp_get_num_procs())
 	for (i = 0; i < N; i += 1) {
 		for (j = 0; j < N; j += 1) {
 			a[i][j] = 0;

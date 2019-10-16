@@ -1,7 +1,10 @@
 (def start-balance 1000)
-(def num-accounts 4)
-(def num-transactions 10)
-(def num-threads 1)
+(def num-accounts 6)
+;; Max 6000, min 6
+(def num-transactions 1000000)
+;; 10 => 5s
+;; 1000000 => 25s
+(def num-threads 8)
 (def extra-processing 1000)	
 (def max-amount	100)
 
@@ -14,10 +17,11 @@
 		(recur (- n 1))))
 		
 (defn swish [from to amount]
-	(do-extra-processing extra-processing)
-	(update @(accounts from) :balance - amount)
-	(update @(accounts to) :balance + amount))
-
+        (dosync
+	        (do-extra-processing extra-processing)
+	        (ref-set (accounts from) (update @(accounts from) :balance - amount))
+	        (ref-set (accounts to) (update @(accounts to) :balance + amount)))
+        )
 (defn work [t]
 	(if (>= t 1)
 		(do
