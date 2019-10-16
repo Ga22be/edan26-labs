@@ -120,9 +120,11 @@ static void consume()
 
 	while ((n = worklist->get()) > 0) {
 		f = factorial(n);
+//		sum_mtx.lock();
 		std::unique_lock<std::mutex> lck(sum_mtx);
 		sum += f;
 		lck.unlock();
+//		sum_mtx.unlock();
 	}
 }
 

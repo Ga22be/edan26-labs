@@ -7,12 +7,32 @@
 
 #include "timebase.h"
 
+class spin_lock {
+	std::atomic<bool> flag;
+
+	public:
+
+		void lock() {
+			bool expected = false;
+//			while (flag.test_and_set(std::memory_order_acquire));
+			while(!atomic_compare_exchange_weak_explicit(&flag, &expected, true, std::memory_order_acquire, std::memory_order_relaxed)) {
+				expected = false;
+				while(flag);
+			}
+		}
+
+		void unlock(){
+			flag.store(false, std::memory_order_release);
+		}
+};
+
+
 class worklist_t {
 	int*			a;
 	size_t			n;
 	size_t			total;	// sum a[0]..a[n-1]
-	std::mutex		m;
-	std::condition_variable	c;
+	spin_lock		lock;
+	
 public:
 	worklist_t(size_t max)
 	{
@@ -33,46 +53,31 @@ public:
 
 	void reset()
 	{
+		lock.lock();
 		total = 0;
 		memset(a, 0, n*sizeof a[0]);
+		lock.unlock();
 	}
 
 	void put(int num)
 	{
-		std::unique_lock<std::mutex>	u(m);
+		lock.lock();
 		a[num] += 1;
 		total += 1;
-		c.notify_all();
+		lock.unlock();
 	}
 
 	int get()
 	{
 		int				i;
 		int				num;
-
-#if 1
-		/* hint: if your class has a mutex m
-		 * and a condition_variable c, you
-		 * can lock it and wait for a number 
-		 * (i.e. total > 0) as follows.
-		 *
-		 */
-
-		std::unique_lock<std::mutex>	u(m);
-
-		/* the lambda is a predicate that 
-		 * returns false when waiting should 
-		 * continue.
-		 *
-		 * this mechanism will automatically
-		 * unlock the mutex m when you return
-		 * from this function. this happens when
-		 * the destructor of u is called.
-		 *
-		 */
-
-		c.wait(u, [this]() { return total > 0; } );
-#endif
+		
+		lock.lock();
+		while (total < 1) {
+			lock.unlock();
+			std::this_thread::yield();
+			lock.lock();
+		}
 
 		for (i = 1; i <= n; i += 1)
 			if (a[i] > 0)
@@ -86,6 +91,7 @@ public:
 			abort();
 		} else
 			i = 0;
+		lock.unlock();
 		return i;
 	}
 };
@@ -122,7 +128,7 @@ static void consume()
 	while ((n = worklist->get()) > 0) {
 		f = factorial(n);
 //		std::unique_lock<std::mutex> lck(sum_mtx);
-		sum += f;
+		sum.fetch_add(f, std::memory_order_relaxed);
 //		lck.unlock();
 	}
 }
