@@ -1,0 +1,8 @@
+[package]
+
+name = "swish"
+version = "0.0.1"
+authors = [ "Anonymous" ]
+
+[dependencies]
+rand = "0.7"
