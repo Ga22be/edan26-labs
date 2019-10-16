@@ -20,7 +20,7 @@ fn main() {
 	let accounts_protection = Arc::new(Mutex::new(accounts));
 
 	for _ in 0 .. num_threads {
-		let a = accounts_protection;
+		let a = Arc::clone(&accounts_protection);
 		let h = thread::spawn(move || {
 			let mut rng = rand::thread_rng();
 
@@ -36,9 +36,15 @@ fn main() {
 				if amount < 0 {
 					amount = -amount;
 				}
-
-				let array = a.lock().unwrap();
-
+				if i != j {
+					let array = a.lock().unwrap();
+					let mut from = array[i].lock().unwrap();
+					let mut to = array[j].lock().unwrap();
+					if *from >= amount {
+						*from -= amount;
+						*to += amount;
+					}
+				}
 			}
 		});
 		threads.push(h);
